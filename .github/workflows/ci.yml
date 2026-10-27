@@ -9,7 +9,9 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Python 3.9 is unavailable in the Ubuntu 26.04 toolcache currently used by
+    # ubuntu-latest, so keep the compatibility job on the prior LTS image.
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ["3.9", "3.12", "3.13"]
