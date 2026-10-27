@@ -2,6 +2,8 @@
 
 ## 1.0.0 — 2026-10-27
 
+- Published under the `flightrecorder-ai` distribution name to avoid a collision
+  with an unrelated package.
 - Added synchronous and asynchronous tool instrumentation.
 - Added bounded file snapshots and automatic diffs.
 - Added credential redaction, retention controls and schema versioning.

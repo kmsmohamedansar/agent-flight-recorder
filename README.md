@@ -6,12 +6,15 @@ recorded evidence that most likely caused them.
 
 The runtime has no third-party dependencies and supports Python 3.9+.
 
+The PyPI distribution is named `flightrecorder-ai`; the Python import and command
+remain `flightrecorder`.
+
 ## Quick start
 
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install -e .
+python -m pip install flightrecorder-ai
 
 # Synthetic example from the product brief
 flightrecorder demo
