@@ -5,6 +5,7 @@ exceptions, file changes and Git context in SQLite, then connects failures to th
 recorded evidence that most likely caused them.
 
 The runtime has no third-party dependencies and supports Python 3.9+.
+The optional local MCP adapter supports Python 3.10+.
 
 The PyPI distribution is named `flightrecorder-ai`; the Python import and command
 remain `flightrecorder`.
@@ -72,6 +73,7 @@ repeating side effects.
 | `export [run-id]` | Export native JSON or OTLP/JSON spans |
 | `serve` | Start the local searchable timeline UI |
 | `prune` | Preview or apply the retention policy |
+| `benchmark` | Run the failure-localization reference cases |
 
 All commands accept `--db PATH` before the command name. Commands accepting an
 optional run ID use the latest run when it is omitted.
@@ -84,6 +86,38 @@ flightrecorder prune --older-than-days 30 --keep-latest 100 --yes
 ```
 
 Retention is always a dry-run unless `--yes` is supplied.
+
+## Connect Codex through MCP
+
+Install the optional adapter, then start it over standard input/output:
+
+```bash
+python -m pip install 'flightrecorder-ai[mcp]'
+flightrecorder-mcp --db /absolute/path/to/project/.flightrecorder.sqlite
+```
+
+The server exposes tools to start, append to, and finish recordings, plus tools
+to list, inspect, compare, export, and investigate them. The database remains on
+your computer. A portable
+[local-plugin example](https://github.com/kmsmohamedansar/agent-flight-recorder/tree/main/examples/codex-plugin)
+is included in the repository and source distribution.
+
+The adapter records only actions explicitly sent to its MCP tools. It cannot
+silently intercept Codex's built-in terminal and file operations, so the included
+skill tells the agent when to report meaningful steps.
+
+## Measure the investigator
+
+Run the included deterministic reference cases:
+
+```bash
+flightrecorder benchmark
+flightrecorder benchmark --json
+```
+
+The benchmark covers explicit path evidence, filenames in failures, removed-code
+vocabulary, recency fallback, and the no-change case. It is a regression suite,
+not a claim that five synthetic cases represent real-world accuracy.
 
 ## Investigation model
 

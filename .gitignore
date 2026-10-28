@@ -6,6 +6,8 @@ __pycache__/
 .flightrecorder.sqlite*
 .flightrecorder-demo/
 *.json
+!examples/codex-plugin/plugin.json
+!examples/codex-plugin/mcp.json
 dist/
 build/
 *.egg-info/

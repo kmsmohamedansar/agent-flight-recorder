@@ -7,7 +7,7 @@ setup(
     # The shorter agent-flight-recorder distribution name is owned by an
     # unrelated project on PyPI. The import and CLI names remain flightrecorder.
     name="flightrecorder-ai",
-    version="1.0.0",
+    version="1.1.0",
     description="A local black-box recorder and failure investigator for AI agents",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -31,5 +31,13 @@ setup(
     ],
     package_dir={"": "src"},
     packages=find_packages(where="src"),
-    entry_points={"console_scripts": ["flightrecorder=flightrecorder.cli:main"]},
+    extras_require={
+        "mcp": ["mcp>=2.3,<3; python_version >= '3.10'"],
+    },
+    entry_points={
+        "console_scripts": [
+            "flightrecorder=flightrecorder.cli:main",
+            "flightrecorder-mcp=flightrecorder.mcp_server:main",
+        ]
+    },
 )

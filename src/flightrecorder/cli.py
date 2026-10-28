@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
 
 from .compare import compare_runs
+from .benchmark import run_benchmark
 from .demo_agent import run_demo as run_agent_demo
 from .export import to_json, to_otlp
 from .investigate import investigate
@@ -151,6 +152,10 @@ def build_parser() -> argparse.ArgumentParser:
     prune.add_argument(
         "--yes", action="store_true", help="perform deletion; default is dry-run"
     )
+    benchmark = commands.add_parser(
+        "benchmark", help="measure failure-localization accuracy"
+    )
+    benchmark.add_argument("--json", action="store_true")
     return parser
 
 
@@ -236,6 +241,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print("  %s" % run_id)
         if run_ids and not args.yes:
             print("Re-run with --yes to apply.")
+    elif args.command == "benchmark":
+        result = run_benchmark()
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print(
+                "Localization benchmark: %d/%d (%d%%)"
+                % (result["passed"], result["total"], result["accuracy"] * 100)
+            )
+            for case in result["cases"]:
+                marker = "PASS" if case["passed"] else "FAIL"
+                print("  %-4s %s" % (marker, case["name"]))
+        return 0 if result["passed"] == result["total"] else 1
     return 0
 
 

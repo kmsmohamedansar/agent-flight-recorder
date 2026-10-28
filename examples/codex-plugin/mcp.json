@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "flightrecorder": {
+      "type": "stdio",
+      "command": "flightrecorder-mcp",
+      "args": ["--db", "${PLUGIN_ROOT}/flightrecorder.sqlite"],
+      "cwd": "${PLUGIN_ROOT}"
+    }
+  }
+}

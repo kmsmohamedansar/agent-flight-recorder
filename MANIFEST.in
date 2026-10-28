@@ -1,0 +1,2 @@
+include ARCHITECTURE.md CHANGELOG.md LICENSE README.md SECURITY.md
+recursive-include examples/codex-plugin *.json *.md

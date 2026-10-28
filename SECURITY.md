@@ -13,6 +13,8 @@ include live credentials or sensitive production recordings in a public issue.
 - Review custom tool inputs, outputs and exception formats for project-specific
   secrets before production use.
 - Apply retention with `flightrecorder prune`; deletion is explicit via `--yes`.
+- Run the MCP adapter over local stdio. Do not expose it through an unauthenticated
+  network bridge; its tools can read recordings and append data to the local store.
 
 The recorder never intentionally repeats side effects during replay. A future
 adapter that enables live replay must make that behavior explicit and opt-in.
