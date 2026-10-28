@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 — Unreleased
+## 1.1.0 — 2026-10-27
 
 - Added an optional MCP 2.x stdio server for Codex and other MCP clients.
 - Added recording, inspection, comparison, export and investigation MCP tools.
