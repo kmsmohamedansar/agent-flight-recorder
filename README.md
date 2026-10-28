@@ -1,5 +1,10 @@
 # Agent Flight Recorder
 
+[![CI](https://github.com/kmsmohamedansar/agent-flight-recorder/actions/workflows/ci.yml/badge.svg)](https://github.com/kmsmohamedansar/agent-flight-recorder/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/flightrecorder-ai)](https://pypi.org/project/flightrecorder-ai/)
+[![Python](https://img.shields.io/pypi/pyversions/flightrecorder-ai)](https://pypi.org/project/flightrecorder-ai/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 A local black-box recorder for AI agents. It captures tool calls, results,
 exceptions, file changes and optional Git context in SQLite, then connects
 failures to the recorded evidence that most likely caused them.
@@ -9,6 +14,8 @@ The optional local MCP adapter supports Python 3.10+.
 
 The PyPI distribution is named `flightrecorder-ai`; the Python import and command
 remain `flightrecorder`.
+
+The latest released package is listed on [PyPI](https://pypi.org/project/flightrecorder-ai/). Changes under **Unreleased** in the [changelog](CHANGELOG.md) are on the default branch and may not be in that package yet.
 
 ## Quick start
 
