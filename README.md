@@ -143,6 +143,9 @@ before recording production or personal data. The web server binds to
 
 See [SECURITY.md](SECURITY.md) for responsible disclosure and deployment notes.
 
+For the project story and a short recording walkthrough, see the
+[case study](PORTFOLIO.md) and [demo script](docs/demo-script.md).
+
 ## Development
 
 ```bash
