@@ -22,8 +22,8 @@ listening socket.
 
 A run owns ordered steps. Each step contains its operation type, timestamps,
 status, redacted inputs and outputs, an optional error, and metadata such as file
-changes. Runs contain agent metadata and before/after Git state when a repository
-is discoverable.
+changes. Runs may contain before/after Git state when the caller explicitly enables
+Git capture and a repository is discoverable.
 
 ## Integration boundary
 
@@ -34,5 +34,7 @@ centralized. Adapters may attach framework-specific trace identifiers in metadat
 The MCP process is deliberately local and explicit. It does not intercept another
 agent's tools; the client calls `start_recording`, `record_step`, and
 `finish_recording`. Read-only tools use the same store and investigation code as
-the CLI, avoiding a second analysis implementation.
+the CLI, avoiding a second analysis implementation. File-write steps accept a
+first-class `changes` list with `path`, `before`, and `after` fields so the shared
+investigator has the evidence it needs.
 

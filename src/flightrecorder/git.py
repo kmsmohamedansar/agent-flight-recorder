@@ -12,10 +12,11 @@ def _git(path: Path, *args: str) -> Optional[str]:
         result = subprocess.run(
             ["git", "-C", str(path), *args],
             text=True,
+            errors="replace",
             capture_output=True,
             timeout=5,
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, subprocess.TimeoutExpired, UnicodeDecodeError):
         return None
     return result.stdout.strip() if result.returncode == 0 else None
 

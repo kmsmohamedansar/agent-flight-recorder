@@ -6,6 +6,8 @@ import hashlib
 from datetime import datetime
 from typing import Any, Dict, List
 
+from . import __version__
+
 
 def _nanos(value: str) -> str:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -58,7 +60,7 @@ def to_otlp(run: Dict[str, Any]) -> Dict[str, Any]:
                 },
                 "scopeSpans": [
                     {
-                        "scope": {"name": "flightrecorder", "version": "1.0.0"},
+                        "scope": {"name": "flightrecorder", "version": __version__},
                         "spans": spans,
                     }
                 ],

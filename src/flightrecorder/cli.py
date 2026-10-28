@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
 
+from . import __version__
 from .compare import compare_runs
 from .benchmark import run_benchmark
 from .demo_agent import run_demo as run_agent_demo
@@ -93,17 +94,20 @@ def _print_timeline(run: Dict[str, Any]) -> None:
             print("      %s" % step["error"])
 
 
-def _print_investigation(run: Dict[str, Any]) -> None:
+def _print_investigation(run: Dict[str, Any]) -> bool:
     result = investigate(run)
     print("Run: %s — %s" % (run["id"], run["name"]))
     if result["failure"] is None:
         print("Failure: none")
-        return
+        return False
     failure = result["failure"]
     print("Failure: %s" % (failure["error"] or failure["name"]))
     suspect = result.get("suspect")
     if suspect is None:
-        print("First suspect: unavailable")
+        print("No suspect found.")
+        for line in result["evidence"]:
+            print("  %s" % line)
+        return False
     else:
         print("First suspect: #%d %s" % (suspect["sequence"], suspect["name"]))
         print("Changed: %s" % result["change"]["path"])
@@ -114,11 +118,13 @@ def _print_investigation(run: Dict[str, Any]) -> None:
             print("Relevant diff:")
             for line in result["diff"]:
                 print("  %s" % line)
+    return True
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="flightrecorder")
     parser.add_argument("--db", default=DEFAULT_DB, help="SQLite recording path")
+    parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("init", help="initialize the recording database")
     commands.add_parser("demo", help="record the built-in failing-agent demo")
@@ -132,6 +138,7 @@ def build_parser() -> argparse.ArgumentParser:
     show.add_argument("run_id", nargs="?")
     inv = commands.add_parser("investigate", help="find the first suspect change")
     inv.add_argument("run_id", nargs="?")
+    inv.add_argument("--json", action="store_true")
     replay = commands.add_parser("replay", help="replay recorded outputs without side effects")
     replay.add_argument("run_id", nargs="?")
     replay.add_argument("--json", action="store_true")
@@ -180,7 +187,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     elif args.command == "show":
         _print_timeline(_load(store, args.run_id))
     elif args.command == "investigate":
-        _print_investigation(_load(store, args.run_id))
+        run = _load(store, args.run_id)
+        result = investigate(run)
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            _print_investigation(run)
+        return 0 if result.get("suspect") is not None else 2
     elif args.command == "replay":
         run = _load(store, args.run_id)
         tape = [
@@ -225,7 +238,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     elif args.command == "serve":
         from .web import serve
 
-        serve(store, args.host, args.port)
+        try:
+            serve(store, args.host, args.port)
+        except OSError as exc:
+            raise SystemExit(
+                "Could not start Flight Recorder on %s:%d: %s. Try another --port."
+                % (args.host, args.port, exc)
+            )
     elif args.command == "prune":
         cutoff = datetime.now(timezone.utc) - timedelta(
             days=max(args.older_than_days, 0)

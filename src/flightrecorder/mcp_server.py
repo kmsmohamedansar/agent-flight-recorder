@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import functools
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -57,9 +58,12 @@ class FlightRecorderService:
         name: str,
         run_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        capture_git: bool = False,
     ) -> Dict[str, Any]:
-        """Start a run before an agent begins a task."""
-        session = self.recorder.run(name, run_id=run_id, metadata=metadata)
+        """Start a run; Git working-tree capture is explicit and off by default."""
+        session = self.recorder.run(
+            name, run_id=run_id, metadata=metadata, capture_git=capture_git
+        )
         if session.id in self.active:
             raise ValueError("run is already active: %s" % session.id)
         session.__enter__()
@@ -76,11 +80,20 @@ class FlightRecorderService:
         output: Any = None,
         error: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        changes: Optional[List[Dict[str, Optional[str]]]] = None,
     ) -> Dict[str, Any]:
-        """Append a completed agent action to an active recording."""
+        """Append an action. For edits, send changes with path/before/after so investigation can rank them."""
         session = self._active(run_id)
         if status not in ("ok", "failed"):
             raise ValueError("status must be 'ok' or 'failed'")
+        step_metadata = dict(metadata or {})
+        if changes:
+            step_metadata["changes"] = changes
+        elif kind == "file_write" and step_metadata.get("implicated_paths"):
+            step_metadata["changes"] = [
+                {"path": path, "before": None, "after": None}
+                for path in step_metadata["implicated_paths"]
+            ]
         session.record(
             name,
             kind=kind,
@@ -88,7 +101,7 @@ class FlightRecorderService:
             input=input,
             output=output,
             error=error,
-            metadata=metadata,
+            metadata=step_metadata,
         )
         run = self._load(run_id)
         return {
@@ -130,6 +143,7 @@ def create_server(db_path: str = ".flightrecorder.sqlite") -> Any:
     """Build the optional MCP 2.x server without loading it in the core runtime."""
     try:
         from mcp.server.mcpserver import MCPServer
+        from mcp.server.mcpserver.exceptions import ToolError
     except ImportError as exc:
         raise RuntimeError(
             "MCP support is optional. Install it with: "
@@ -151,14 +165,24 @@ def create_server(db_path: str = ".flightrecorder.sqlite") -> Any:
         version=__version__,
         lifespan=lifespan,
     )
-    server.tool()(service.list_runs)
-    server.tool()(service.show_run)
-    server.tool()(service.investigate_run)
-    server.tool()(service.compare_recordings)
-    server.tool()(service.export_run)
-    server.tool()(service.start_recording)
-    server.tool()(service.record_step)
-    server.tool()(service.finish_recording)
+    def visible_errors(function: Any) -> Any:
+        @functools.wraps(function)
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
+            try:
+                return function(*args, **kwargs)
+            except ValueError as exc:
+                raise ToolError(str(exc)) from exc
+
+        return wrapped
+
+    server.tool()(visible_errors(service.list_runs))
+    server.tool()(visible_errors(service.show_run))
+    server.tool()(visible_errors(service.investigate_run))
+    server.tool()(visible_errors(service.compare_recordings))
+    server.tool()(visible_errors(service.export_run))
+    server.tool()(visible_errors(service.start_recording))
+    server.tool()(visible_errors(service.record_step))
+    server.tool()(visible_errors(service.finish_recording))
     return server
 
 

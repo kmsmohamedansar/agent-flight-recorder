@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import sys
 import tempfile
 import unittest
@@ -27,11 +28,9 @@ class MCPAndBenchmarkTests(unittest.TestCase):
             "run-mcp",
             "edit target",
             kind="file_write",
-            metadata={
-                "changes": [
-                    {"path": "target.py", "before": "safe=True", "after": "safe=False"}
-                ]
-            },
+            changes=[
+                {"path": "target.py", "before": "safe=True", "after": "safe=False"}
+            ],
         )
         self.service.record_step(
             "run-mcp",
@@ -46,6 +45,25 @@ class MCPAndBenchmarkTests(unittest.TestCase):
         self.assertEqual(finished["status"], "failed")
         self.assertEqual(self.service.list_runs()[0]["id"], "run-mcp")
         result = self.service.investigate_run("run-mcp")
+        self.assertEqual(result["change"]["path"], "target.py")
+
+    def test_mcp_file_write_accepts_implicated_paths_as_fallback(self):
+        self.service.start_recording("MCP run", run_id="run-mcp-path")
+        self.service.record_step(
+            "run-mcp-path",
+            "edit target",
+            kind="file_write",
+            metadata={"implicated_paths": ["target.py"]},
+        )
+        self.service.record_step(
+            "run-mcp-path",
+            "run test",
+            kind="test",
+            status="failed",
+            error="target.py failed",
+        )
+        self.service.finish_recording("run-mcp-path")
+        result = self.service.investigate_run("run-mcp-path")
         self.assertEqual(result["change"]["path"], "target.py")
 
     def test_mcp_service_validates_active_runs_and_export_format(self):
@@ -71,6 +89,10 @@ class MCPProtocolSmokeTests(unittest.IsolatedAsyncioTestCase):
             params = StdioServerParameters(
                 command=sys.executable,
                 args=["-m", "flightrecorder.mcp_server", "--db", db],
+                env={
+                    **os.environ,
+                    "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src"),
+                },
             )
             async with stdio_client(params) as streams:
                 async with ClientSession(*streams) as session:
@@ -87,6 +109,47 @@ class MCPProtocolSmokeTests(unittest.IsolatedAsyncioTestCase):
                     ]:
                         result = await session.call_tool(name, arguments)
                         self.assertFalse(result.is_error)
+
+                    missing = await session.call_tool("show_run", {"run_id": "missing"})
+                    self.assertTrue(missing.is_error)
+                    self.assertIn("recording not found: missing", str(missing.content))
+
+                    await session.call_tool(
+                        "start_recording", {"name": "suspect", "run_id": "run-suspect"}
+                    )
+                    await session.call_tool(
+                        "record_step",
+                        {
+                            "run_id": "run-suspect",
+                            "name": "edit target",
+                            "kind": "file_write",
+                            "changes": [
+                                {
+                                    "path": "target.py",
+                                    "before": "safe=True",
+                                    "after": "safe=False",
+                                }
+                            ],
+                        },
+                    )
+                    await session.call_tool(
+                        "record_step",
+                        {
+                            "run_id": "run-suspect",
+                            "name": "test",
+                            "kind": "test",
+                            "status": "failed",
+                            "error": "target.py failed",
+                        },
+                    )
+                    await session.call_tool(
+                        "finish_recording", {"run_id": "run-suspect"}
+                    )
+                    investigation = await session.call_tool(
+                        "investigate_run", {"run_id": "run-suspect"}
+                    )
+                    self.assertFalse(investigation.is_error)
+                    self.assertIn("edit target", str(investigation.content))
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ For a recorded workflow:
 
 1. Call `start_recording` before beginning the requested work.
 2. Call `record_step` after each meaningful tool action. Include file changes in
-   `metadata.changes` when known, and never include credentials or unnecessary
+   the first-class `changes` field when known, and never include credentials or unnecessary
    personal data.
 3. Call `finish_recording` even when the work fails.
 4. On failure, call `investigate_run` and describe its result as a suspect backed

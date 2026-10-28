@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from flightrecorder import FlightRecorder
+from flightrecorder import __version__
 from flightrecorder.compare import compare_runs
 from flightrecorder.demo_agent import run_demo
 from flightrecorder.export import to_json, to_otlp
@@ -52,6 +53,16 @@ class AdvancedFlightRecorderTests(unittest.TestCase):
         )
         self.assertIsNone(self.store.get_run("run-old"))
 
+    def test_retention_keep_latest_applies_to_recent_runs(self):
+        self._record("run-one", {"value": 1})
+        self._record("run-two", {"value": 2})
+        self._record("run-three", {"value": 3})
+        candidates = self.store.prune_runs(
+            "2000-01-01T00:00:00+00:00", keep_latest=1
+        )
+        self.assertEqual(len(candidates), 2)
+        self.assertNotIn("run-three", candidates)
+
     def test_compare_finds_first_output_divergence(self):
         self._record("run-left", {"answer": 1})
         self._record("run-right", {"answer": 2})
@@ -68,6 +79,8 @@ class AdvancedFlightRecorderTests(unittest.TestCase):
         span = to_otlp(run)["resourceSpans"][0]["scopeSpans"][0]["spans"][0]
         self.assertEqual(span["name"], "tool")
         self.assertEqual(len(span["traceId"]), 32)
+        scope = to_otlp(run)["resourceSpans"][0]["scopeSpans"][0]["scope"]
+        self.assertEqual(scope["version"], __version__)
 
     def test_replay_tape_returns_results_and_replays_errors(self):
         recorder = FlightRecorder(self.db)

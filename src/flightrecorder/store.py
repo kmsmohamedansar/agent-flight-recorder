@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -61,6 +62,10 @@ class SQLiteStore:
         with self.connect() as connection:
             connection.executescript(SCHEMA)
             connection.execute("PRAGMA user_version = %d" % SCHEMA_VERSION)
+        try:
+            os.chmod(self.path, 0o600)
+        except OSError:
+            pass
 
     def connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path)
@@ -153,7 +158,7 @@ class SQLiteStore:
             rows = connection.execute(
                 """SELECT id FROM runs
                    WHERE started_at < ?
-                     AND id NOT IN (
+                      OR id NOT IN (
                          SELECT id FROM runs ORDER BY started_at DESC LIMIT ?
                      )
                    ORDER BY started_at""",

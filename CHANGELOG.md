@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Made Git context capture opt-in and prevented context-capture failures from
+  interrupting recorded programs, including non-UTF-8 Git output.
+- Added first-class MCP file-change reporting and actionable MCP tool errors.
+- Expanded credential redaction, protected new SQLite files with owner-only
+  permissions and documented the remaining privacy limits.
+- Made count-based pruning apply independently, corrected the OTLP scope version,
+  and improved no-suspect and server-start errors.
+- Added regression coverage for the independently reported failures.
+
 ## 1.1.0 — 2026-10-27
 
 - Added an optional MCP 2.x stdio server for Codex and other MCP clients.

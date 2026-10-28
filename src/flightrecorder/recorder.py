@@ -96,20 +96,26 @@ class RunSession(AbstractContextManager):
         name: str,
         run_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        capture_git: bool = False,
     ) -> None:
         self.store = store
         self.id = run_id or "run-" + uuid.uuid4().hex[:8]
         self.name = name
         self.metadata = dict(metadata or {})
+        self.capture_git = capture_git
         self.started_at = now()
         self._closed = False
         self._has_failure = False
 
     def __enter__(self) -> "RunSession":
-        workspace = str(self.metadata.get("workspace") or os.getcwd())
-        state = git_state(workspace)
-        if state is not None:
-            self.metadata["git_before"] = state
+        if self.capture_git:
+            workspace = str(self.metadata.get("workspace") or os.getcwd())
+            try:
+                state = git_state(workspace)
+            except Exception:
+                state = None
+            if state is not None:
+                self.metadata["git_before"] = state
         self.store.create_run(self.id, self.name, self.started_at, self.metadata)
         return self
 
@@ -205,11 +211,15 @@ class RunSession(AbstractContextManager):
         if not self._closed:
             if status == "ok" and self._has_failure:
                 status = "failed"
-            workspace = str(self.metadata.get("workspace") or os.getcwd())
-            state = git_state(workspace)
-            if state is not None:
-                self.metadata["git_after"] = state
-                self.store.update_run_metadata(self.id, self.metadata)
+            if self.capture_git:
+                workspace = str(self.metadata.get("workspace") or os.getcwd())
+                try:
+                    state = git_state(workspace)
+                except Exception:
+                    state = None
+                if state is not None:
+                    self.metadata["git_after"] = state
+                    self.store.update_run_metadata(self.id, self.metadata)
             self.store.finish_run(self.id, status, now())
             self._closed = True
 
@@ -219,8 +229,11 @@ class RunSession(AbstractContextManager):
 
 
 class FlightRecorder:
-    def __init__(self, db_path: str = ".flightrecorder.sqlite") -> None:
+    def __init__(
+        self, db_path: str = ".flightrecorder.sqlite", *, capture_git: bool = False
+    ) -> None:
         self.store = SQLiteStore(db_path)
+        self.capture_git = capture_git
 
     def run(
         self,
@@ -228,6 +241,8 @@ class FlightRecorder:
         *,
         run_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        capture_git: Optional[bool] = None,
     ) -> RunSession:
-        return RunSession(self.store, name, run_id, metadata)
+        should_capture_git = self.capture_git if capture_git is None else capture_git
+        return RunSession(self.store, name, run_id, metadata, should_capture_git)
 

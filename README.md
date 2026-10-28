@@ -1,8 +1,8 @@
 # Agent Flight Recorder
 
 A local black-box recorder for AI agents. It captures tool calls, results,
-exceptions, file changes and Git context in SQLite, then connects failures to the
-recorded evidence that most likely caused them.
+exceptions, file changes and optional Git context in SQLite, then connects
+failures to the recorded evidence that most likely caused them.
 
 The runtime has no third-party dependencies and supports Python 3.9+.
 The optional local MCP adapter supports Python 3.10+.
@@ -53,6 +53,11 @@ with recorder.run("Fix payment bug", metadata={"workspace": "."}) as run:
 Arguments, return values and exceptions are captured automatically. Watched text
 files are snapshotted before and after a call. Exceptions are recorded and then
 re-raised, so instrumentation does not change control flow.
+
+Git context is off by default because a working-tree diff can contain unrelated or
+sensitive changes. Opt in with `FlightRecorder(..., capture_git=True)` or per run
+with `recorder.run(..., capture_git=True)`. When enabled, the recorder captures the
+repository status and up to one megabyte each of the working and staged diffs.
 
 For lower-level integrations, `run.step(...)` and `run.record(...)` are also
 available. `ReplayTape` feeds recorded outputs back to deterministic tests without
@@ -106,6 +111,23 @@ The adapter records only actions explicitly sent to its MCP tools. It cannot
 silently intercept Codex's built-in terminal and file operations, so the included
 skill tells the agent when to report meaningful steps.
 
+For a file edit, `record_step` accepts a first-class `changes` list. Each item has
+`path`, `before`, and `after` fields; this evidence is what lets `investigate_run`
+return a suspect and relevant diff:
+
+```json
+{
+  "run_id": "run-example",
+  "name": "edit payment guard",
+  "kind": "file_write",
+  "changes": [
+    {"path": "src/payment.py", "before": "old text", "after": "new text"}
+  ]
+}
+```
+
+`start_recording` also accepts `capture_git: true` as an explicit opt-in.
+
 ## Measure the investigator
 
 Run the included deterministic reference cases:
@@ -132,16 +154,23 @@ and changed external systems remain outside that guarantee.
 
 ## Security and privacy
 
-Common credential keys, inline passwords and bearer tokens are redacted before
-SQLite persistence, including exception text and captured file content. Git and
-file capture are bounded to one megabyte per value; binary files and common build
-directories are skipped.
+Credential-looking key names and a small set of high-confidence value patterns are
+redacted before SQLite persistence, including bearer tokens, common provider-token
+prefixes and passwords embedded in connection URLs. Secrets under unfamiliar names
+or formats may still be stored. Watched file capture is bounded to one megabyte per
+value; binary files and common build directories are skipped. Git capture is opt-in
+and is bounded to one megabyte per diff.
 
 No heuristic filter is perfect. Test the redaction policy for your environment
 before recording production or personal data. The web server binds to
 `127.0.0.1` by default and has no authentication; do not expose it publicly.
 
-See [SECURITY.md](SECURITY.md) for responsible disclosure and deployment notes.
+The SQLite file is created with owner-only permissions where the operating system
+supports them. Add `.flightrecorder.sqlite*` to your project's `.gitignore` and
+treat every recording as sensitive.
+
+See the [security policy](https://github.com/kmsmohamedansar/agent-flight-recorder/blob/main/SECURITY.md)
+for responsible disclosure and deployment notes.
 
 For the project story and a short recording walkthrough, see the
 [case study](PORTFOLIO.md) and [demo script](docs/demo-script.md).
@@ -154,5 +183,6 @@ python -m flightrecorder demo-agent
 ```
 
 CI runs the suite on Python 3.9, 3.12 and 3.13. Architecture and integration
-boundaries are described in [ARCHITECTURE.md](ARCHITECTURE.md).
+boundaries are described in the
+[architecture notes](https://github.com/kmsmohamedansar/agent-flight-recorder/blob/main/ARCHITECTURE.md).
 

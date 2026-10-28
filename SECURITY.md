@@ -8,6 +8,10 @@ include live credentials or sensitive production recordings in a public issue.
 ## Deployment notes
 
 - Treat the SQLite database as sensitive even when redaction is enabled.
+- Add `.flightrecorder.sqlite*` to `.gitignore`; database, WAL and shared-memory
+  files must not be committed.
+- Git context capture is off by default. Enabling it stores bounded working and
+  staged diffs, which can include changes unrelated to the recorded tool calls.
 - Keep the timeline server bound to localhost or place it behind authentication.
 - Use least-privilege service credentials for recorded agents.
 - Review custom tool inputs, outputs and exception formats for project-specific
