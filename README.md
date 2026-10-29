@@ -17,6 +17,10 @@ remain `flightrecorder`.
 
 The latest released package is listed on [PyPI](https://pypi.org/project/flightrecorder-ai/). Changes under **Unreleased** in the [changelog](CHANGELOG.md) are on the default branch and may not be in that package yet.
 
+![Flight Recorder timeline showing a failing demo test, the first suspect edit, and its diff](docs/demo-timeline.png)
+
+The local UI above shows the `demo-agent` workflow: a deliberately introduced bug in example payment code, a failing subprocess test, and the recorded edit selected for investigation. A suspect is a starting point for review, not proof of causation.
+
 ## Quick start
 
 ```bash
