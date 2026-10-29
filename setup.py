@@ -7,7 +7,7 @@ setup(
     # The shorter agent-flight-recorder distribution name is owned by an
     # unrelated project on PyPI. The import and CLI names remain flightrecorder.
     name="flightrecorder-ai",
-    version="1.1.0",
+    version="1.1.1",
     description="A local black-box recorder and failure investigator for AI agents",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

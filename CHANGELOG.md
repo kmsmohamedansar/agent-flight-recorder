@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.1.1 — 2026-10-28
+
 - Made Git context capture opt-in and prevented context-capture failures from
   interrupting recorded programs, including non-UTF-8 Git output.
 - Added first-class MCP file-change reporting and actionable MCP tool errors.
