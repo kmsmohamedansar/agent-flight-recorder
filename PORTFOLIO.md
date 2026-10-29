@@ -2,7 +2,7 @@
 
 Agent Flight Recorder is a local debugging tool for AI agent workflows. It records tool actions, results, errors and file changes in SQLite, with optional Git context, then helps answer a practical question after a failure: *which earlier change is worth looking at first, and why?*
 
-I designed and released the project as a solo, open-source Python package. I used Codex as a coding collaborator, reviewed the behavior through tests and live runs, and connected its MCP interface to my Codex workspace. Version 1.1.0 is available as `flightrecorder-ai` on PyPI; the core supports Python 3.9+ and has no third-party runtime dependencies. The optional MCP adapter supports Python 3.10+.
+I designed and released the project as a solo, open-source Python package. I used Codex as a coding collaborator, reviewed the behavior through tests and live runs, and connected its MCP interface to my Codex workspace. Version 1.1.1 is available as `flightrecorder-ai` on PyPI; the core supports Python 3.9+ and has no third-party runtime dependencies. The optional MCP adapter supports Python 3.10+.
 
 ## The problem
 
@@ -51,7 +51,7 @@ An independent Claude Code evaluation installed the published 1.1.0 wheel withou
 
 The same evaluation found serious gaps. A non-UTF-8 byte in Git diff output could stop a run before the agent began; MCP clients had no documented, first-class way to report a file change, so the MCP investigator returned no suspect; Git capture silently stored the whole dirty diff; common credential formats escaped redaction; and `prune --keep-latest` did not apply independently.
 
-I reproduced those findings and changed the design rather than hiding them. Git capture is now opt-in and cannot interrupt a run, MCP file changes are part of the tool schema, MCP errors retain their actionable cause, measured credential forms have regression coverage, new databases use owner-only permissions and retention limits apply independently. The non-UTF-8 repository and end-to-end MCP suspect path are both permanent tests. These fixes are on the main branch; the published 1.1.0 package remains the evaluated build until a maintenance release is cut.
+I reproduced those findings and changed the design rather than hiding them. Git capture is now opt-in and cannot interrupt a run, MCP file changes are part of the tool schema, MCP errors retain their actionable cause, measured credential forms have regression coverage, new databases use owner-only permissions and retention limits apply independently. The non-UTF-8 repository and end-to-end MCP suspect path are both permanent tests. These fixes are included in 1.1.1; the independent evaluation tested the earlier 1.1.0 package.
 
 ## Limits and next questions
 
@@ -67,4 +67,4 @@ flightrecorder investigate
 flightrecorder benchmark
 ```
 
-For MCP on Python 3.10+, install `flightrecorder-ai[mcp]` and run `flightrecorder-mcp --db /absolute/path/to/recordings.sqlite`. See the [README](README.md), [architecture](ARCHITECTURE.md), [security notes](SECURITY.md), [PyPI package](https://pypi.org/project/flightrecorder-ai/) and [v1.1.0 release](https://github.com/kmsmohamedansar/agent-flight-recorder/releases/tag/v1.1.0).
+For MCP on Python 3.10+, install `flightrecorder-ai[mcp]` and run `flightrecorder-mcp --db /absolute/path/to/recordings.sqlite`. See the [README](README.md), [architecture](ARCHITECTURE.md), [security notes](SECURITY.md), [PyPI package](https://pypi.org/project/flightrecorder-ai/) and [v1.1.1 release](https://github.com/kmsmohamedansar/agent-flight-recorder/releases/tag/v1.1.1).
